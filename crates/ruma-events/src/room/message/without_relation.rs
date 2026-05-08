@@ -1,3 +1,5 @@
+#[cfg(feature = "unstable-msc4295")]
+use js_int::UInt;
 use serde::Serialize;
 
 use super::{
@@ -24,12 +26,27 @@ pub struct RoomMessageEventContentWithoutRelation {
     /// [mentions]: https://spec.matrix.org/latest/client-server-api/#user-and-room-mentions
     #[serde(rename = "m.mentions", skip_serializing_if = "Option::is_none")]
     pub mentions: Option<Mentions>,
+
+    /// [MSC4295](https://github.com/matrix-org/matrix-spec-proposals/pull/4295):
+    /// The bounce limit of this message.
+    #[cfg(feature = "unstable-msc4295")]
+    #[serde(
+        rename = "io.github.m13253.bounce_limit",
+        skip_serializing_if = "Option::is_none",
+        alias = "m.bounce_limit"
+    )]
+    pub bounce_limit: Option<UInt>,
 }
 
 impl RoomMessageEventContentWithoutRelation {
     /// Creates a new `RoomMessageEventContentWithoutRelation` with the given `MessageType`.
     pub fn new(msgtype: MessageType) -> Self {
-        Self { msgtype, mentions: None }
+        Self {
+            msgtype,
+            mentions: None,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 
     /// A constructor to create a plain text message.
@@ -85,8 +102,14 @@ impl RoomMessageEventContentWithoutRelation {
         self,
         relates_to: Option<Relation<RoomMessageEventContentWithoutRelation>>,
     ) -> RoomMessageEventContent {
-        let Self { msgtype, mentions } = self;
-        RoomMessageEventContent { msgtype, relates_to, mentions }
+        let Self { msgtype, mentions, .. } = self;
+        RoomMessageEventContent {
+            msgtype,
+            relates_to,
+            mentions,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 
     /// Turns `self` into a [rich reply] to the message using the given metadata.
@@ -226,6 +249,8 @@ impl RoomMessageEventContentWithoutRelation {
             new_content: RoomMessageEventContentWithoutRelation {
                 msgtype: self.msgtype.clone(),
                 mentions,
+                #[cfg(feature = "unstable-msc4295")]
+                bounce_limit: None,
             },
         });
 
@@ -259,13 +284,24 @@ impl From<MessageType> for RoomMessageEventContentWithoutRelation {
 impl From<RoomMessageEventContent> for RoomMessageEventContentWithoutRelation {
     fn from(value: RoomMessageEventContent) -> Self {
         let RoomMessageEventContent { msgtype, mentions, .. } = value;
-        Self { msgtype, mentions }
+        Self {
+            msgtype,
+            mentions,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 }
 
 impl From<RoomMessageEventContentWithoutRelation> for RoomMessageEventContent {
     fn from(value: RoomMessageEventContentWithoutRelation) -> Self {
-        let RoomMessageEventContentWithoutRelation { msgtype, mentions } = value;
-        Self { msgtype, relates_to: None, mentions }
+        let RoomMessageEventContentWithoutRelation { msgtype, mentions, .. } = value;
+        Self {
+            msgtype,
+            relates_to: None,
+            mentions,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 }

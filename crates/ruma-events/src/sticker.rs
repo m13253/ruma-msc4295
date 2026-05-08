@@ -2,6 +2,8 @@
 //!
 //! [`m.sticker`]: https://spec.matrix.org/latest/client-server-api/#msticker
 
+#[cfg(feature = "unstable-msc4295")]
+use js_int::UInt;
 use ruma_common::OwnedMxcUri;
 use ruma_macros::EventContent;
 use serde::{Deserialize, Serialize, de};
@@ -103,16 +105,40 @@ pub struct StickerEventContent {
         deserialize_with = "crate::room::message::relation_serde::deserialize_relation"
     )]
     pub relates_to: Option<Relation<StickerEventContentWithoutRelation>>,
+
+    /// [MSC4295](https://github.com/matrix-org/matrix-spec-proposals/pull/4295):
+    /// The bounce limit of this message.
+    #[cfg(feature = "unstable-msc4295")]
+    #[serde(
+        rename = "io.github.m13253.bounce_limit",
+        skip_serializing_if = "Option::is_none",
+        alias = "m.bounce_limit"
+    )]
+    pub bounce_limit: Option<UInt>,
 }
 
 impl StickerEventContent {
     /// Creates a new `StickerEventContent` with the given body, image info and URL.
     pub fn new(body: String, info: ImageInfo, url: OwnedMxcUri) -> Self {
-        Self { body, info, source: StickerMediaSource::Plain(url.clone()), relates_to: None }
+        Self {
+            body,
+            info,
+            source: StickerMediaSource::Plain(url.clone()),
+            relates_to: None,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 
     /// Creates a new `StickerEventContent` with the given body, image info, URL, and media source.
     pub fn with_source(body: String, info: ImageInfo, source: StickerMediaSource) -> Self {
-        Self { body, info, source, relates_to: None }
+        Self {
+            body,
+            info,
+            source,
+            relates_to: None,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 }

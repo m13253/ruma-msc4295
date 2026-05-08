@@ -5,6 +5,8 @@
 use std::borrow::Cow;
 
 use as_variant::as_variant;
+#[cfg(feature = "unstable-msc4295")]
+use js_int::UInt;
 use ruma_common::{
     EventId, OwnedEventId, UserId,
     serde::{JsonObject, StringEnum},
@@ -100,12 +102,28 @@ pub struct RoomMessageEventContent {
     /// [mentions]: https://spec.matrix.org/latest/client-server-api/#user-and-room-mentions
     #[serde(rename = "m.mentions", skip_serializing_if = "Option::is_none")]
     pub mentions: Option<Mentions>,
+
+    /// [MSC4295](https://github.com/matrix-org/matrix-spec-proposals/pull/4295):
+    /// The bounce limit of this message.
+    #[cfg(feature = "unstable-msc4295")]
+    #[serde(
+        rename = "io.github.m13253.bounce_limit",
+        skip_serializing_if = "Option::is_none",
+        alias = "m.bounce_limit"
+    )]
+    pub bounce_limit: Option<UInt>,
 }
 
 impl RoomMessageEventContent {
     /// Create a `RoomMessageEventContent` with the given `MessageType`.
     pub fn new(msgtype: MessageType) -> Self {
-        Self { msgtype, relates_to: None, mentions: None }
+        Self {
+            msgtype,
+            relates_to: None,
+            mentions: None,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 
     /// A constructor to create a plain text message.
@@ -250,7 +268,7 @@ impl RoomMessageEventContent {
 
     /// Apply the given new content from a [`Replacement`] to this message.
     pub fn apply_replacement(&mut self, new_content: RoomMessageEventContentWithoutRelation) {
-        let RoomMessageEventContentWithoutRelation { msgtype, mentions } = new_content;
+        let RoomMessageEventContentWithoutRelation { msgtype, mentions, .. } = new_content;
         self.msgtype = msgtype;
         self.mentions = mentions;
     }

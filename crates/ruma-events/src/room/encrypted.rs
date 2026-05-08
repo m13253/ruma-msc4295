@@ -31,18 +31,38 @@ pub struct RoomEncryptedEventContent {
     /// Information about related events.
     #[serde(rename = "m.relates_to", skip_serializing_if = "Option::is_none")]
     pub relates_to: Option<Relation>,
+
+    /// [MSC4295](https://github.com/matrix-org/matrix-spec-proposals/pull/4295):
+    /// The bounce limit of this message.
+    #[cfg(feature = "unstable-msc4295")]
+    #[serde(
+        rename = "io.github.m13253.bounce_limit",
+        skip_serializing_if = "Option::is_none",
+        alias = "m.bounce_limit"
+    )]
+    pub bounce_limit: Option<UInt>,
 }
 
 impl RoomEncryptedEventContent {
     /// Creates a new `RoomEncryptedEventContent` with the given scheme and relation.
     pub fn new(scheme: EncryptedEventScheme, relates_to: Option<Relation>) -> Self {
-        Self { scheme, relates_to }
+        Self {
+            scheme,
+            relates_to,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 }
 
 impl From<EncryptedEventScheme> for RoomEncryptedEventContent {
     fn from(scheme: EncryptedEventScheme) -> Self {
-        Self { scheme, relates_to: None }
+        Self {
+            scheme,
+            relates_to: None,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit: None,
+        }
     }
 }
 

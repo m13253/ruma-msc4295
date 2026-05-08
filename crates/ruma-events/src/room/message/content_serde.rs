@@ -1,5 +1,7 @@
 //! `Deserialize` implementation for RoomMessageEventContent and MessageType.
 
+#[cfg(feature = "unstable-msc4295")]
+use js_int::UInt;
 use ruma_common::serde::from_raw_json_value;
 use serde::{Deserialize, de};
 use serde_json::value::RawValue as RawJsonValue;
@@ -24,7 +26,16 @@ impl<'de> Deserialize<'de> for RoomMessageEventContent {
 
         let MentionsDeHelper { mentions } = from_raw_json_value(&json)?;
 
-        Ok(Self { msgtype: from_raw_json_value(&json)?, relates_to, mentions })
+        #[cfg(feature = "unstable-msc4295")]
+        let BounceLimitDeHelper { bounce_limit } = from_raw_json_value(&json)?;
+
+        Ok(Self {
+            msgtype: from_raw_json_value(&json)?,
+            relates_to,
+            mentions,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit,
+        })
     }
 }
 
@@ -37,7 +48,15 @@ impl<'de> Deserialize<'de> for RoomMessageEventContentWithoutRelation {
 
         let MentionsDeHelper { mentions } = from_raw_json_value(&json)?;
 
-        Ok(Self { msgtype: from_raw_json_value(&json)?, mentions })
+        #[cfg(feature = "unstable-msc4295")]
+        let BounceLimitDeHelper { bounce_limit } = from_raw_json_value(&json)?;
+
+        Ok(Self {
+            msgtype: from_raw_json_value(&json)?,
+            mentions,
+            #[cfg(feature = "unstable-msc4295")]
+            bounce_limit,
+        })
     }
 }
 
@@ -45,6 +64,13 @@ impl<'de> Deserialize<'de> for RoomMessageEventContentWithoutRelation {
 struct MentionsDeHelper {
     #[serde(rename = "m.mentions")]
     mentions: Option<Mentions>,
+}
+
+#[cfg(feature = "unstable-msc4295")]
+#[derive(Deserialize)]
+struct BounceLimitDeHelper {
+    #[serde(rename = "io.github.m13253.bounce_limit", alias = "m.bounce_limit")]
+    bounce_limit: Option<UInt>,
 }
 
 /// Helper struct to determine the msgtype from a `serde_json::value::RawValue`
